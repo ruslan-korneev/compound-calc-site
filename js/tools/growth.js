@@ -29,6 +29,7 @@ export function render(root, ctx) {
           <button type="button" data-v="months">По месяцам</button>
         </div>
         <span class="mutednote" id="gWarn"></span>
+        <button type="button" class="linkbtn csvbtn" id="gCsv">⤓ CSV</button>
       </div>
       <div class="tablewrap">
         <table>
@@ -57,6 +58,18 @@ export function render(root, ctx) {
   root.querySelector('#gLog').addEventListener('input', e => { logMode = e.target.checked; update(root, ctx); });
   root.querySelector('#gReal').checked = realMode;
   root.querySelector('#gLog').checked = logMode;
+  root.querySelector('#gCsv').addEventListener('click', () => {
+    const sim = simulate(ctx.scenario);
+    const rows = toRows(sim, view);
+    const head = [view === 'months' ? 'month' : 'year', 'balance', 'invested', 'gain_period', 'withdrawn_period', 'withdrawn_total'];
+    const csv = [head.join(',')].concat(rows.map(r =>
+      [r.period, r.bal.toFixed(2), r.invested.toFixed(2), r.gain.toFixed(2), r.take.toFixed(2), r.wdTotal.toFixed(2)].join(','))).join('\n');
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'compound.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 
   update(root, ctx);
 }

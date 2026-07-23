@@ -17,7 +17,7 @@
   --band: rgba(42,120,214,.15);
 }
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     color-scheme: dark;
     --page: #0d0d0d;
     --panel: #1a1a19;
@@ -35,6 +35,24 @@
     --good: #0ca30c;
     --band: rgba(57,135,229,.20);
   }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --panel: #1a1a19;
+  --ink: #ffffff;
+  --ink-2: #c3c2b7;
+  --muted: #898781;
+  --grid: #2c2c2a;
+  --axis: #383835;
+  --border: rgba(255,255,255,.10);
+  --accent: #3987e5;
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #c98500;
+  --good: #0ca30c;
+  --band: rgba(57,135,229,.20);
 }
 * { box-sizing: border-box; }
 body {
@@ -145,6 +163,20 @@ td.gain { color: var(--good); }
 td.wd { color: var(--s3); }
 tbody tr:hover td { background: rgba(127,127,127,.07); }
 tr:last-child td { border-bottom: none; }
+
+.themebtn {
+  margin-left: auto; border: 1px solid var(--border); background: var(--panel);
+  border-radius: 999px; width: 36px; height: 36px; cursor: pointer; font-size: 16px;
+  color: var(--ink);
+}
+.csvbtn { margin-left: auto; }
+
+@media print {
+  nav, .themebtn, .logline, .seg, .linkbtn { display: none !important; }
+  .tablewrap { max-height: none; overflow: visible; }
+  body { padding: 0; }
+  .card, .stat { border-color: #ccc; break-inside: avoid; }
+}
 
 @media (max-width: 720px) {
   body { padding: 14px 10px 32px; }

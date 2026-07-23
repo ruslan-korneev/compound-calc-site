@@ -4,13 +4,14 @@ import * as growth from './tools/growth.js';
 import * as compare from './tools/compare.js';
 import * as goal from './tools/goal.js';
 import * as passive from './tools/passive.js';
+import * as fan from './tools/fan.js';
 
 const TOOLS = {
   growth:  { title: '📈 Рост',            mod: growth },
   compare: { title: '⚖️ Сравнение',       mod: compare },
   goal:    { title: '🎯 Цель',            mod: goal },
   passive: { title: '🏖 Пассивный доход', mod: passive },
-  fan:     { title: '🎲 Веер',            mod: null },
+  fan:     { title: '🎲 Веер',            mod: fan },
 };
 
 const st = loadState();
@@ -41,6 +42,26 @@ function onScenarioChange() {
   else if (t.mod) t.mod.render(toolRoot, ctx);
   saveState(ctx.tool, ctx.scenario);
 }
+
+// ручная тема: auto -> dark -> light
+const THEME_KEY = 'ccalc-theme';
+const themeBtn = document.getElementById('themeBtn');
+function applyTheme(t) {
+  if (t === 'auto') delete document.documentElement.dataset.theme;
+  else document.documentElement.dataset.theme = t;
+  themeBtn.textContent = { auto: '◐', dark: '🌙', light: '☀️' }[t];
+  themeBtn.title = 'Тема: ' + { auto: 'системная', dark: 'тёмная', light: 'светлая' }[t];
+}
+let theme = localStorage.getItem(THEME_KEY) || 'auto';
+applyTheme(theme);
+themeBtn.addEventListener('click', () => {
+  theme = { auto: 'dark', dark: 'light', light: 'auto' }[theme];
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+});
+
+if ('serviceWorker' in navigator && location.protocol === 'https:')
+  navigator.serviceWorker.register('sw.js').catch(() => {});
 
 renderNav();
 renderEditor(editorRoot, ctx.scenario, onScenarioChange);
