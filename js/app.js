@@ -3,12 +3,13 @@ import { renderEditor } from './editor.js';
 import * as growth from './tools/growth.js';
 import * as compare from './tools/compare.js';
 import * as goal from './tools/goal.js';
+import * as passive from './tools/passive.js';
 
 const TOOLS = {
   growth:  { title: '📈 Рост',            mod: growth },
   compare: { title: '⚖️ Сравнение',       mod: compare },
   goal:    { title: '🎯 Цель',            mod: goal },
-  passive: { title: '🏖 Пассивный доход', mod: null },
+  passive: { title: '🏖 Пассивный доход', mod: passive },
   fan:     { title: '🎲 Веер',            mod: null },
 };
 
