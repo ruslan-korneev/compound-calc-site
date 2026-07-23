@@ -1,11 +1,13 @@
 import { loadState, saveState } from './state.js';
 import { renderEditor } from './editor.js';
 import * as growth from './tools/growth.js';
+import * as compare from './tools/compare.js';
+import * as goal from './tools/goal.js';
 
 const TOOLS = {
   growth:  { title: '📈 Рост',            mod: growth },
-  compare: { title: '⚖️ Сравнение',       mod: null },
-  goal:    { title: '🎯 Цель',            mod: null },
+  compare: { title: '⚖️ Сравнение',       mod: compare },
+  goal:    { title: '🎯 Цель',            mod: goal },
   passive: { title: '🏖 Пассивный доход', mod: null },
   fan:     { title: '🎲 Веер',            mod: null },
 };
