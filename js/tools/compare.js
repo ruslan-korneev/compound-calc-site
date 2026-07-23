@@ -50,10 +50,8 @@ export function render(root, ctx) {
     const list = loadCompareList();
     if (list.length >= 4) return;
     const bench = BENCHMARKS[+b.dataset.bench];
-    const sc = JSON.parse(JSON.stringify(ctx.scenario));
-    sc.name = bench.name;
-    sc.rates = [{ years: sc.years, ratePct: bench.ratePct, period: 'year' }];
-    list.push(sc);
+    if (list.some(x => x.benchRate === bench.ratePct || x.name === bench.name)) return;
+    list.push({ name: bench.name, benchRate: bench.ratePct });
     saveCompareList(list);
     update(root, ctx);
   }));
@@ -63,17 +61,31 @@ export function render(root, ctx) {
   update(root, ctx);
 }
 
+const BENCH_NAMES = new Map(BENCHMARKS.map(b => [b.name, b.ratePct]));
+
 export function update(root, ctx) {
   const saved = loadCompareList();
+  const horizon = ctx.scenario.years;
   const all = [{ sc: { ...ctx.scenario, name: ctx.scenario.name || 'Текущий' }, live: true },
-               ...saved.map(sc => ({ sc, live: false }))].slice(0, 4);
+    ...saved.map(item => {
+      const benchRate = item.benchRate ?? BENCH_NAMES.get(item.name);   // legacy-снапшоты бенчмарков тоже оживляем
+      if (benchRate != null) {
+        const sc = JSON.parse(JSON.stringify(ctx.scenario));
+        sc.name = item.name;
+        sc.rates = [{ years: horizon, ratePct: benchRate, period: 'year' }];
+        return { sc, bench: true };
+      }
+      return { sc: item };
+    })].slice(0, 4);
 
   root.querySelector('#cList').innerHTML = all.map((a, i) => `
     <div class="listrow">
       <i class="sw" style="background:${COLORS[i]}"></i>
       <b style="color:var(--ink)">${a.sc.name}</b>
-      <span class="mutednote">${fmtPct(apyOf(a.sc.rates[0].ratePct, a.sc.rates[0].period) * 100)} APY${a.sc.rates.length > 1 ? ' → …' : ''},
-        взнос ${a.sc.contrib.enabled ? fmt(a.sc.contrib.amount) + '/мес' : 'нет'}${a.sc.wdSharePct ? ', снятие ' + a.sc.wdSharePct + '%' : ''}</span>
+      <span class="mutednote">${a.bench
+        ? 'как текущий, но ставка ' + fmtPct(apyOf(a.sc.rates[0].ratePct, a.sc.rates[0].period) * 100) + ' APY'
+        : `${fmtPct(apyOf(a.sc.rates[0].ratePct, a.sc.rates[0].period) * 100)} APY${a.sc.rates.length > 1 ? ' → …' : ''},
+           взнос ${a.sc.contrib.enabled ? fmt(a.sc.contrib.amount) + '/мес' : 'нет'}${a.sc.wdSharePct ? ', снятие ' + a.sc.wdSharePct + '%' : ''}`}</span>
       ${a.live ? '<span class="mutednote">(текущий — правится сверху)</span>'
                : `<button type="button" class="del" data-del="${i - 1}" title="удалить">×</button>`}
     </div>`).join('');
@@ -84,8 +96,8 @@ export function update(root, ctx) {
     update(root, ctx);
   }));
 
-  const sims = all.map(a => simulate(a.sc));
-  const horizon = Math.max(...sims.map(s => s.years));
+  // все сценарии — на горизонте текущего: сравниваем стратегии, не сроки
+  const sims = all.map(a => simulate({ ...a.sc, years: horizon }));
   const series = sims.map((s, i) => ({
     key: 'k' + i, label: all[i].sc.name, color: COLORS[i],
     pts: thinPoints(s.pts, 'm', 'bal').map(p => ({ x: p.x / 12, y: p.y })),
