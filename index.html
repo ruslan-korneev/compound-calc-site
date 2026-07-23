@@ -7,149 +7,137 @@
 <style>
   :root {
     color-scheme: light;
-    --bg: #f9f9f7;
+    --page: #f9f9f7;
     --panel: #fcfcfb;
-    --border: #d9dee4;
-    --text: #0b0b0b;
-    --text-2: #52514e;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
     --muted: #898781;
     --grid: #e1e0d9;
     --axis: #c3c2b7;
+    --border: rgba(11,11,11,.10);
     --accent: #2a78d6;
-    --green: #006300;
-    --series-1: #2a78d6;
-    --series-2: #eb6834;
+    --s1: #2a78d6;   /* баланс */
+    --s2: #eb6834;   /* вложено */
+    --s3: #1baf7a;   /* снято */
+    --good: #006300;
   }
   @media (prefers-color-scheme: dark) {
     :root {
       color-scheme: dark;
-      --bg: #0d0d0d;
+      --page: #0d0d0d;
       --panel: #1a1a19;
-      --border: #2c2c2a;
-      --text: #ffffff;
-      --text-2: #c3c2b7;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
       --muted: #898781;
       --grid: #2c2c2a;
       --axis: #383835;
+      --border: rgba(255,255,255,.10);
       --accent: #3987e5;
-      --green: #0ca30c;
-      --series-1: #3987e5;
-      --series-2: #d95926;
+      --s1: #3987e5;
+      --s2: #d95926;
+      --s3: #199e70;
+      --good: #0ca30c;
     }
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
     font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding: 24px;
+    background: var(--page);
+    color: var(--ink);
+    padding: 28px 24px 48px;
   }
-  h1 { font-size: 20px; margin: 0 0 16px; }
-  .panel {
+  .wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1 { font-size: 21px; margin: 0 0 4px; }
+
+  .card {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 16px;
-    max-width: 960px;
+    border-radius: 14px;
+    padding: 20px;
   }
-  form {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 14px;
-    margin-bottom: 8px;
-  }
-  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 16px 18px; }
+  .field label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 5px; }
   input[type=number], select {
     width: 100%;
-    padding: 7px 9px;
+    padding: 8px 10px;
     border: 1px solid var(--border);
-    border-radius: 6px;
-    background: var(--bg);
-    color: var(--text);
+    border-radius: 8px;
+    background: var(--page);
+    color: var(--ink);
     font-size: 15px;
   }
   input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
-  .checkline { display: flex; align-items: center; gap: 8px; margin-top: 22px; }
-  .checkline input { width: 16px; height: 16px; accent-color: var(--accent); }
-  .checkline span { font-size: 14px; }
-  .summary { margin: 14px 0 6px; font-size: 14px; color: var(--text-2); }
-  .summary b { color: var(--text); }
-  .warn { color: #e6a23c; font-size: 13px; margin: 4px 0; }
+  input:disabled { opacity: .45; }
 
-  .chartpanel { max-width: 960px; margin-top: 14px; position: relative; }
+  .switchline { display: flex; align-items: center; gap: 8px; margin-top: 8px; cursor: pointer; user-select: none; }
+  .switchline input { width: 15px; height: 15px; accent-color: var(--accent); cursor: pointer; }
+  .switchline span { font-size: 13px; color: var(--ink-2); }
+
+  .rangeline { display: flex; align-items: center; gap: 12px; }
+  input[type=range] { flex: 1; accent-color: var(--accent); }
+  .rangeval { min-width: 46px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .seg button {
+    padding: 8px 14px; border: none; background: var(--page); color: var(--ink-2);
+    font-size: 14px; cursor: pointer;
+  }
+  .seg button.on { background: var(--accent); color: #fff; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+  .stat { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .stat .v { font-size: 21px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .stat .l { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .stat.hl .v { color: var(--accent); }
+  .stat.wd .v { color: var(--s3); }
+
   .chart-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; }
-  .chart-title { font-weight: 600; font-size: 15px; }
-  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--text-2); }
+  .chart-title { font-weight: 650; font-size: 15px; }
+  .legend { display: flex; gap: 14px; font-size: 13px; color: var(--ink-2); }
   .legend span { display: inline-flex; align-items: center; gap: 6px; }
-  .swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
-  .sw1 { background: var(--series-1); }
-  .sw2 { background: var(--series-2); }
-  .logline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); margin-left: auto; }
+  .sw { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .logline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--ink-2); margin-left: auto; cursor: pointer; }
   .logline input { accent-color: var(--accent); width: 15px; height: 15px; }
   #chart { width: 100%; display: block; }
   #chart text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); }
-  #chart .endlabel { font-weight: 600; }
+  #chart .endlabel { font-weight: 650; }
+  .chartwrap { position: relative; }
   #tooltip {
-    position: absolute;
-    pointer-events: none;
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 8px 10px;
-    font-size: 13px;
-    box-shadow: 0 4px 14px rgba(0,0,0,.25);
-    display: none;
-    white-space: nowrap;
-    z-index: 5;
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 13px; box-shadow: 0 4px 14px rgba(0,0,0,.22); white-space: nowrap;
   }
-  #tooltip .tt-title { color: var(--muted); margin-bottom: 3px; }
-  #tooltip .row { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+  #tooltip .t { color: var(--muted); margin-bottom: 3px; }
+  #tooltip .r { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
 
-  .tablewrap {
-    max-width: 960px;
-    margin-top: 14px;
-    overflow: auto;
-    max-height: 60vh;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--panel);
-  }
+  .tablewrap { overflow: auto; max-height: 62vh; border-radius: 10px; border: 1px solid var(--border); }
   table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
-  th, td {
-    padding: 6px 12px;
-    text-align: right;
-    border-bottom: 1px solid var(--border);
-    white-space: nowrap;
-  }
-  th {
-    position: sticky;
-    top: 0;
-    background: var(--panel);
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 13px;
-  }
+  th, td { padding: 7px 12px; text-align: right; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 600; font-size: 12.5px; z-index: 1; }
   td:first-child, th:first-child { text-align: left; color: var(--muted); }
-  td.gain { color: var(--green); }
+  td.gain { color: var(--good); }
+  td.wd { color: var(--s3); }
+  tbody tr:hover td { background: rgba(127,127,127,.07); }
   tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: rgba(127,127,127,.08); }
+  .warn { color: #e6a23c; font-size: 13px; margin-top: 8px; }
 </style>
 </head>
 <body>
+<div class="wrap">
 <h1>Калькулятор сложного процента</h1>
 
-<div class="panel">
-  <form id="f" onsubmit="return false">
-    <div>
+<div class="card">
+  <div class="grid">
+    <div class="field">
       <label for="start">Стартовый вклад</label>
       <input type="number" id="start" value="400" min="0" step="any">
     </div>
-    <div>
+    <div class="field">
       <label for="rate">Ставка за период, %</label>
       <input type="number" id="rate" value="0.0275" min="0" step="any">
     </div>
-    <div>
+    <div class="field">
       <label for="period">Период начисления</label>
       <select id="period">
         <option value="18" selected>каждые 18 часов</option>
@@ -159,62 +147,82 @@
         <option value="year">каждый год</option>
       </select>
     </div>
-    <div>
+    <div class="field">
       <label for="contrib">Взнос / мес</label>
       <input type="number" id="contrib" value="400" min="0" step="any">
+      <label class="switchline"><input type="checkbox" id="useContrib" checked><span>добавлять каждый месяц</span></label>
     </div>
-    <div class="checkline">
-      <input type="checkbox" id="useContrib" checked>
-      <span>Добавлять каждый месяц</span>
+  </div>
+  <div class="grid" style="margin-top:16px">
+    <div class="field" style="grid-column: span 2; min-width: 260px;">
+      <label for="wd">Забирать себе из дохода (остальное реинвестируется)</label>
+      <div class="rangeline">
+        <input type="range" id="wd" min="0" max="100" step="5" value="0">
+        <span class="rangeval" id="wdVal">0%</span>
+      </div>
     </div>
-    <div>
-      <label for="view">Показывать</label>
-      <select id="view">
-        <option value="years">По годам</option>
-        <option value="months">По месяцам</option>
-      </select>
+    <div class="field">
+      <label>Показывать</label>
+      <div class="seg" id="viewSeg">
+        <button type="button" data-v="years" class="on">По годам</button>
+        <button type="button" data-v="months">По месяцам</button>
+      </div>
     </div>
-    <div>
+    <div class="field">
       <label for="years">Сколько лет (1–1000)</label>
       <input type="number" id="years" value="40" min="1" max="1000" step="1">
     </div>
-  </form>
-  <div class="summary" id="summary"></div>
+  </div>
   <div class="warn" id="warn"></div>
 </div>
 
-<div class="panel chartpanel">
+<div class="stats">
+  <div class="stat"><div class="v" id="stApy">—</div><div class="l">APY (с учётом капитализации)</div></div>
+  <div class="stat hl"><div class="v" id="stFinal">—</div><div class="l">итог на счету</div></div>
+  <div class="stat"><div class="v" id="stInvested">—</div><div class="l">вложено своих</div></div>
+  <div class="stat"><div class="v" id="stGain" style="color:var(--good)">—</div><div class="l">доход (реинвестированный)</div></div>
+  <div class="stat wd"><div class="v" id="stWd">—</div><div class="l">снято себе за всё время</div></div>
+  <div class="stat wd"><div class="v" id="stWdMo">—</div><div class="l">пассивный доход/мес в последний год</div></div>
+</div>
+
+<div class="card chartwrap">
   <div class="chart-head">
     <span class="chart-title">Рост капитала</span>
     <div class="legend">
-      <span><i class="swatch sw1"></i>Баланс</span>
-      <span><i class="swatch sw2"></i>Вложено</span>
+      <span><i class="sw" style="background:var(--s1)"></i>Баланс</span>
+      <span><i class="sw" style="background:var(--s2)"></i>Вложено</span>
+      <span id="lgWd" style="display:none"><i class="sw" style="background:var(--s3)"></i>Снято всего</span>
     </div>
     <label class="logline"><input type="checkbox" id="logScale"> лог. шкала</label>
   </div>
-  <svg id="chart" viewBox="0 0 920 340" role="img" aria-label="График роста баланса и вложенных средств"></svg>
+  <svg id="chart" viewBox="0 0 960 360" role="img" aria-label="График роста баланса, вложений и снятого"></svg>
   <div id="tooltip"></div>
 </div>
 
-<div class="tablewrap">
-  <table>
-    <thead>
-      <tr>
-        <th id="periodHead">Год</th>
-        <th>Баланс</th>
-        <th>Вложено</th>
-        <th>Доход всего</th>
-        <th>Доход за период</th>
-      </tr>
-    </thead>
-    <tbody id="rows"></tbody>
-  </table>
+<div class="card" style="padding:0">
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th id="periodHead">Год</th>
+          <th>Баланс</th>
+          <th>Вложено</th>
+          <th>Доход за период</th>
+          <th>Снято за период</th>
+          <th>Снято всего</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+</div>
 </div>
 
 <script>
 const $ = id => document.getElementById(id);
-const inputs = ['start', 'rate', 'period', 'contrib', 'useContrib', 'view', 'years', 'logScale'];
-let chartData = [];   // помесячные точки {m, bal, invested}
+let view = 'years';
+let chartData = [];
+let pts = [];
 
 function fmt(x) {
   if (!isFinite(x)) return '∞';
@@ -238,13 +246,14 @@ function calc() {
   const period = $('period').value;
   const useContrib = $('useContrib').checked;
   const contrib = useContrib ? (+$('contrib').value || 0) : 0;
-  const view = $('view').value;
+  const wdShare = (+$('wd').value || 0) / 100;
   const years = Math.min(1000, Math.max(1, Math.floor(+$('years').value || 1)));
 
   $('contrib').disabled = !useContrib;
+  $('wdVal').textContent = Math.round(wdShare*100) + '%';
   $('periodHead').textContent = view === 'months' ? 'Месяц' : 'Год';
+  $('lgWd').style.display = wdShare > 0 ? '' : 'none';
 
-  // периодов начисления в году → месячный множитель
   const periodsPerYear = period === 'year' ? 1 : period === 'month' ? 12 : (365 * 24) / +period;
   const apy = Math.pow(1 + rate, periodsPerYear) - 1;
   const mf = Math.pow(1 + rate, periodsPerYear / 12);
@@ -254,57 +263,65 @@ function calc() {
   $('warn').textContent = totalMonths / step > MAX_ROWS
     ? `Слишком много строк для помесячного вида — показаны первые ${MAX_ROWS} месяцев.` : '';
 
-  let bal = start, invested = start, periodInterest = 0;
+  let bal = start, invested = start, wdTotal = 0;
+  let perInterest = 0, perWd = 0;
   const rows = [];
-  chartData = [{ m: 0, bal: start, invested: start, monthInterest: 0 }];
+  chartData = [{ m: 0, bal: start, invested: start, wd: 0 }];
 
   for (let m = 1; m <= totalMonths; m++) {
-    const monthInterest = bal * mf - bal;
-    bal = bal * mf + contrib;
+    const interest = bal * (mf - 1);
+    const take = interest * wdShare;
+    bal += interest - take + contrib;
     invested += contrib;
-    periodInterest += monthInterest;
-    chartData.push({ m, bal, invested, monthInterest });
+    wdTotal += take;
+    perInterest += interest - take;
+    perWd += take;
+    chartData.push({ m, bal, invested, wd: wdTotal });
     const isRow = view === 'months' ? true : (m % 12 === 0);
     if (isRow && rows.length < MAX_ROWS) {
-      rows.push({ period: view === 'months' ? m : m / 12, bal, invested, gain: bal - invested, delta: periodInterest });
-      periodInterest = 0;
+      rows.push({ period: view === 'months' ? m : m / 12, bal, invested,
+                  gain: perInterest, take: perWd, wdTotal });
+      perInterest = 0; perWd = 0;
     }
     if (!isFinite(bal)) break;
   }
 
   const last = rows[rows.length - 1];
-  $('summary').innerHTML = last
-    ? `APY: <b>${(apy * 100).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}%</b> · ` +
-      `Множитель за год: <b>×${(1 + apy).toFixed(4)}</b> · ` +
-      `Итог: <b>${fmt(last.bal)}</b> · Вложено: <b>${fmt(last.invested)}</b> · ` +
-      `Доход: <b>${fmt(last.gain)}</b>` +
-      (last.invested > 0 ? ` (×${fmt(last.bal / last.invested)} от вложенного)` : '')
-    : '';
+  $('stApy').textContent = (apy*100).toLocaleString('ru-RU',{maximumFractionDigits:2}) + '%';
+  $('stFinal').textContent = last ? fmt(last.bal) : '—';
+  $('stInvested').textContent = last ? fmt(last.invested) : '—';
+  $('stGain').textContent = last ? fmt(last.bal - last.invested) : '—';
+  $('stWd').textContent = last ? fmt(last.wdTotal) : '—';
+  // пассивный доход/мес: снятое за последние 12 мес / 12
+  const lastYearWd = chartData.length > 13
+    ? chartData[chartData.length-1].wd - chartData[chartData.length-13].wd
+    : (last ? last.wdTotal : 0);
+  $('stWdMo').textContent = fmt(lastYearWd / 12) + '/мес';
 
   $('rows').innerHTML = rows.map(r =>
     `<tr><td>${r.period}</td><td>${fmt(r.bal)}</td><td>${fmt(r.invested)}</td>` +
-    `<td class="gain">${fmt(r.gain)}</td><td class="gain">+${fmt(r.delta)}</td></tr>`
+    `<td class="gain">+${fmt(r.gain)}</td><td class="wd">${r.take ? '+'+fmt(r.take) : '—'}</td>` +
+    `<td class="wd">${r.wdTotal ? fmt(r.wdTotal) : '—'}</td></tr>`
   ).join('');
 
   drawChart();
 }
 
-// ---------- график ----------
-const W = 920, H = 340, PAD = { l: 74, r: 96, t: 14, b: 34 };
-let pts = [];   // прореженные точки для hover
+const W = 960, H = 360, PAD = { l: 74, r: 96, t: 14, b: 34 };
 
 function drawChart() {
   const svg = $('chart');
   const log = $('logScale').checked;
+  const showWd = (+$('wd').value || 0) > 0;
   const data = chartData.filter(d => isFinite(d.bal));
   if (data.length < 2) { svg.innerHTML = ''; return; }
 
-  // прореживание до ~600 точек
   const stride = Math.max(1, Math.ceil(data.length / 600));
   pts = data.filter((_, i) => i % stride === 0 || i === data.length - 1);
 
   const xMax = data[data.length - 1].m;
-  const vals = pts.flatMap(d => [d.bal, d.invested]).filter(v => !log || v > 0);
+  const keys = showWd ? ['bal','invested','wd'] : ['bal','invested'];
+  const vals = pts.flatMap(d => keys.map(k => d[k])).filter(v => !log || v > 0);
   let vMin = Math.min(...vals), vMax = Math.max(...vals);
   if (vMax === vMin) vMax = vMin + 1;
 
@@ -314,10 +331,9 @@ function drawChart() {
     const lo = Math.log10(Math.max(vMin, 1e-9)), hi = Math.log10(vMax);
     Y = v => PAD.t + (1 - (Math.log10(Math.max(v, 1e-9)) - lo) / (hi - lo || 1)) * (H - PAD.t - PAD.b);
   } else {
-    Y = v => PAD.t + (1 - (v - 0) / (vMax || 1)) * (H - PAD.t - PAD.b);
+    Y = v => PAD.t + (1 - v / (vMax || 1)) * (H - PAD.t - PAD.b);
   }
 
-  // тики Y
   let yTicks = [];
   if (log) {
     const lo = Math.ceil(Math.log10(Math.max(vMin, 1e-9))), hi = Math.floor(Math.log10(vMax));
@@ -329,45 +345,42 @@ function drawChart() {
     const nice = [1, 2, 2.5, 5, 10].find(k => k * mag >= rawStep) * mag;
     for (let v = 0; v <= vMax + 1e-9; v += nice) yTicks.push(v);
   }
-
-  // тики X (годы)
   const totalYears = xMax / 12;
   const xEvery = totalYears <= 12 ? 1 : Math.ceil(totalYears / 10);
-  const xTicks = [];
-  for (let y = 0; y <= totalYears; y += xEvery) xTicks.push(y);
 
-  const line = key => 'M' + pts.map(d => `${X(d.m).toFixed(1)},${Y(d[key]).toFixed(1)}`).join('L');
+  const line = key => 'M' + pts.map(d => `${X(d.m).toFixed(1)},${Y(Math.max(d[key], log ? vMin : 0)).toFixed(1)}`).join('L');
 
   let s = '';
   for (const v of yTicks) {
     const y = Y(v).toFixed(1);
-    s += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${y}" y2="${y}" stroke="var(--grid)"/>`;
     s += `<text x="${PAD.l - 8}" y="${+y + 4}" text-anchor="end">${fmtShort(v)}</text>`;
   }
-  for (const yr of xTicks) {
-    const x = X(yr * 12).toFixed(1);
-    s += `<text x="${x}" y="${H - PAD.b + 18}" text-anchor="middle">${yr}</text>`;
-  }
+  for (let yr = 0; yr <= totalYears; yr += xEvery)
+    s += `<text x="${X(yr*12).toFixed(1)}" y="${H - PAD.b + 18}" text-anchor="middle">${yr}</text>`;
   s += `<text x="${W - PAD.r}" y="${H - PAD.b + 18}" text-anchor="start" dx="10">лет</text>`;
-  s += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${H - PAD.b}" y2="${H - PAD.b}" stroke="var(--axis)" stroke-width="1"/>`;
+  s += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${H - PAD.b}" y2="${H - PAD.b}" stroke="var(--axis)"/>`;
 
-  s += `<path d="${line('invested')}" fill="none" stroke="var(--series-2)" stroke-width="2"/>`;
-  s += `<path d="${line('bal')}" fill="none" stroke="var(--series-1)" stroke-width="2"/>`;
+  if (showWd) s += `<path d="${line('wd')}" fill="none" stroke="var(--s3)" stroke-width="2"/>`;
+  s += `<path d="${line('invested')}" fill="none" stroke="var(--s2)" stroke-width="2"/>`;
+  s += `<path d="${line('bal')}" fill="none" stroke="var(--s1)" stroke-width="2"/>`;
 
-  // подписи у концов линий
   const lastP = pts[pts.length - 1];
-  const yB = Y(lastP.bal), yI = Y(lastP.invested);
-  const yI2 = Math.abs(yB - yI) < 14 ? yB + 14 : yI;
-  s += `<text class="endlabel" x="${W - PAD.r + 6}" y="${yB + 4}" fill="var(--series-1)" style="fill:var(--series-1)">${fmtShort(lastP.bal)}</text>`;
-  s += `<text class="endlabel" x="${W - PAD.r + 6}" y="${yI2 + 4}" style="fill:var(--series-2)">${fmtShort(lastP.invested)}</text>`;
+  const ends = [{v:lastP.bal, c:'--s1'}, {v:lastP.invested, c:'--s2'}];
+  if (showWd) ends.push({v:lastP.wd, c:'--s3'});
+  ends.forEach(e => e.y = Y(Math.max(e.v, log ? vMin : 0)));
+  ends.sort((a,b) => a.y - b.y);
+  for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i-1].y < 15) ends[i].y = ends[i-1].y + 15;
+  for (const e of ends)
+    s += `<text class="endlabel" x="${W - PAD.r + 6}" y="${e.y + 4}" style="fill:var(${e.c})">${fmtShort(e.v)}</text>`;
 
-  s += `<line id="crosshair" y1="${PAD.t}" y2="${H - PAD.b}" stroke="var(--axis)" stroke-width="1" visibility="hidden"/>`;
-  s += `<circle id="dot1" r="4" fill="var(--series-1)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
-  s += `<circle id="dot2" r="4" fill="var(--series-2)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
+  s += `<line id="crosshair" y1="${PAD.t}" y2="${H - PAD.b}" stroke="var(--axis)" visibility="hidden"/>`;
+  for (const [id, c] of [['dot1','--s1'],['dot2','--s2'],['dot3','--s3']])
+    s += `<circle id="${id}" r="4" fill="var(${c})" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
   s += `<rect id="hover" x="${PAD.l}" y="${PAD.t}" width="${W - PAD.l - PAD.r}" height="${H - PAD.t - PAD.b}" fill="transparent"/>`;
 
   svg.innerHTML = s;
-  svg._scales = { X, Y, xMax };
+  svg._scales = { X, Y, xMax, showWd };
   bindHover();
 }
 
@@ -375,7 +388,7 @@ function bindHover() {
   const svg = $('chart'), tt = $('tooltip');
   const hover = $('hover');
   const move = ev => {
-    const { X, Y, xMax } = svg._scales;
+    const { X, Y, xMax, showWd } = svg._scales;
     const rect = svg.getBoundingClientRect();
     const sx = (ev.clientX - rect.left) * (W / rect.width);
     const m = Math.min(xMax, Math.max(0, (sx - PAD.l) / (W - PAD.l - PAD.r) * xMax));
@@ -384,15 +397,19 @@ function bindHover() {
     const x = X(best.m);
     $('crosshair').setAttribute('x1', x); $('crosshair').setAttribute('x2', x);
     $('crosshair').setAttribute('visibility', 'visible');
-    $('dot1').setAttribute('cx', x); $('dot1').setAttribute('cy', Y(best.bal)); $('dot1').setAttribute('visibility', 'visible');
-    $('dot2').setAttribute('cx', x); $('dot2').setAttribute('cy', Y(best.invested)); $('dot2').setAttribute('visibility', 'visible');
-
+    const dots = [['dot1', best.bal], ['dot2', best.invested], ['dot3', showWd ? best.wd : null]];
+    for (const [id, v] of dots) {
+      const el = $(id);
+      if (v === null) { el.setAttribute('visibility','hidden'); continue; }
+      el.setAttribute('cx', x); el.setAttribute('cy', Y(v)); el.setAttribute('visibility','visible');
+    }
     const yr = Math.floor(best.m / 12), mo = best.m % 12;
     tt.innerHTML =
-      `<div class="tt-title">${yr ? yr + ' г.' : ''}${mo ? ' ' + mo + ' мес.' : (yr ? '' : 'старт')}</div>` +
-      `<div class="row"><i class="swatch sw1"></i>Баланс: <b>${fmt(best.bal)}</b></div>` +
-      `<div class="row"><i class="swatch sw2"></i>Вложено: <b>${fmt(best.invested)}</b></div>` +
-      `<div class="row" style="color:var(--green)">Доход: ${fmt(best.bal - best.invested)}</div>`;
+      `<div class="t">${yr ? yr + ' г.' : ''}${mo ? ' ' + mo + ' мес.' : (yr ? '' : 'старт')}</div>` +
+      `<div class="r"><i class="sw" style="background:var(--s1)"></i>Баланс: <b>${fmt(best.bal)}</b></div>` +
+      `<div class="r"><i class="sw" style="background:var(--s2)"></i>Вложено: <b>${fmt(best.invested)}</b></div>` +
+      (showWd ? `<div class="r"><i class="sw" style="background:var(--s3)"></i>Снято: <b>${fmt(best.wd)}</b></div>` : '') +
+      `<div class="r" style="color:var(--good)">Доход: ${fmt(best.bal - best.invested)}</div>`;
     tt.style.display = 'block';
     const panel = svg.parentElement.getBoundingClientRect();
     let left = ev.clientX - panel.left + 16;
@@ -400,15 +417,21 @@ function bindHover() {
     tt.style.left = left + 'px';
     tt.style.top = (ev.clientY - panel.top - 10) + 'px';
   };
-  const leave = () => {
-    tt.style.display = 'none';
-    for (const id of ['crosshair', 'dot1', 'dot2']) $(id).setAttribute('visibility', 'hidden');
-  };
   hover.addEventListener('pointermove', move);
-  hover.addEventListener('pointerleave', leave);
+  hover.addEventListener('pointerleave', () => {
+    tt.style.display = 'none';
+    for (const id of ['crosshair','dot1','dot2','dot3']) $(id).setAttribute('visibility','hidden');
+  });
 }
 
-inputs.forEach(id => $(id).addEventListener('input', calc));
+['start','rate','period','contrib','useContrib','years','wd','logScale']
+  .forEach(id => $(id).addEventListener('input', calc));
+$('viewSeg').addEventListener('click', ev => {
+  const b = ev.target.closest('button'); if (!b) return;
+  view = b.dataset.v;
+  for (const btn of $('viewSeg').children) btn.classList.toggle('on', btn === b);
+  calc();
+});
 calc();
 </script>
 </body>
