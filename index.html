@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Калькулятор сложного процента</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f9f9f7;
+    --panel: #fcfcfb;
+    --border: #d9dee4;
+    --text: #0b0b0b;
+    --text-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --accent: #2a78d6;
+    --green: #006300;
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --bg: #0d0d0d;
+      --panel: #1a1a19;
+      --border: #2c2c2a;
+      --text: #ffffff;
+      --text-2: #c3c2b7;
+      --muted: #898781;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --accent: #3987e5;
+      --green: #0ca30c;
+      --series-1: #3987e5;
+      --series-2: #d95926;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  h1 { font-size: 20px; margin: 0 0 16px; }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    max-width: 960px;
+  }
+  form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  label { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  input[type=number], select {
+    width: 100%;
+    padding: 7px 9px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+  }
+  input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .checkline { display: flex; align-items: center; gap: 8px; margin-top: 22px; }
+  .checkline input { width: 16px; height: 16px; accent-color: var(--accent); }
+  .checkline span { font-size: 14px; }
+  .summary { margin: 14px 0 6px; font-size: 14px; color: var(--text-2); }
+  .summary b { color: var(--text); }
+  .warn { color: #e6a23c; font-size: 13px; margin: 4px 0; }
+
+  .chartpanel { max-width: 960px; margin-top: 14px; position: relative; }
+  .chart-head { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 8px; }
+  .chart-title { font-weight: 600; font-size: 15px; }
+  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--text-2); }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 3px; border-radius: 2px; display: inline-block; }
+  .sw1 { background: var(--series-1); }
+  .sw2 { background: var(--series-2); }
+  .logline { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-2); margin-left: auto; }
+  .logline input { accent-color: var(--accent); width: 15px; height: 15px; }
+  #chart { width: 100%; display: block; }
+  #chart text { font: 12px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); }
+  #chart .endlabel { font-weight: 600; }
+  #tooltip {
+    position: absolute;
+    pointer-events: none;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 13px;
+    box-shadow: 0 4px 14px rgba(0,0,0,.25);
+    display: none;
+    white-space: nowrap;
+    z-index: 5;
+  }
+  #tooltip .tt-title { color: var(--muted); margin-bottom: 3px; }
+  #tooltip .row { display: flex; align-items: center; gap: 6px; font-variant-numeric: tabular-nums; }
+
+  .tablewrap {
+    max-width: 960px;
+    margin-top: 14px;
+    overflow: auto;
+    max-height: 60vh;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+  }
+  table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; }
+  th, td {
+    padding: 6px 12px;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th {
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 13px;
+  }
+  td:first-child, th:first-child { text-align: left; color: var(--muted); }
+  td.gain { color: var(--green); }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(127,127,127,.08); }
+</style>
+</head>
+<body>
+<h1>Калькулятор сложного процента</h1>
+
+<div class="panel">
+  <form id="f" onsubmit="return false">
+    <div>
+      <label for="start">Стартовый вклад</label>
+      <input type="number" id="start" value="400" min="0" step="any">
+    </div>
+    <div>
+      <label for="rate">Ставка за период, %</label>
+      <input type="number" id="rate" value="0.0275" min="0" step="any">
+    </div>
+    <div>
+      <label for="period">Период начисления</label>
+      <select id="period">
+        <option value="18" selected>каждые 18 часов</option>
+        <option value="24">каждый день</option>
+        <option value="168">каждую неделю</option>
+        <option value="month">каждый месяц</option>
+        <option value="year">каждый год</option>
+      </select>
+    </div>
+    <div>
+      <label for="contrib">Взнос / мес</label>
+      <input type="number" id="contrib" value="400" min="0" step="any">
+    </div>
+    <div class="checkline">
+      <input type="checkbox" id="useContrib" checked>
+      <span>Добавлять каждый месяц</span>
+    </div>
+    <div>
+      <label for="view">Показывать</label>
+      <select id="view">
+        <option value="years">По годам</option>
+        <option value="months">По месяцам</option>
+      </select>
+    </div>
+    <div>
+      <label for="years">Сколько лет (1–1000)</label>
+      <input type="number" id="years" value="40" min="1" max="1000" step="1">
+    </div>
+  </form>
+  <div class="summary" id="summary"></div>
+  <div class="warn" id="warn"></div>
+</div>
+
+<div class="panel chartpanel">
+  <div class="chart-head">
+    <span class="chart-title">Рост капитала</span>
+    <div class="legend">
+      <span><i class="swatch sw1"></i>Баланс</span>
+      <span><i class="swatch sw2"></i>Вложено</span>
+    </div>
+    <label class="logline"><input type="checkbox" id="logScale"> лог. шкала</label>
+  </div>
+  <svg id="chart" viewBox="0 0 920 340" role="img" aria-label="График роста баланса и вложенных средств"></svg>
+  <div id="tooltip"></div>
+</div>
+
+<div class="tablewrap">
+  <table>
+    <thead>
+      <tr>
+        <th id="periodHead">Год</th>
+        <th>Баланс</th>
+        <th>Вложено</th>
+        <th>Доход всего</th>
+        <th>Доход за период</th>
+      </tr>
+    </thead>
+    <tbody id="rows"></tbody>
+  </table>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const inputs = ['start', 'rate', 'period', 'contrib', 'useContrib', 'view', 'years', 'logScale'];
+let chartData = [];   // помесячные точки {m, bal, invested}
+
+function fmt(x) {
+  if (!isFinite(x)) return '∞';
+  if (x >= 1e15) return x.toExponential(3).replace('e+', '·10^');
+  const opts = x < 10000 ? { maximumFractionDigits: 2 } : { maximumFractionDigits: 0 };
+  return x.toLocaleString('ru-RU', opts);
+}
+function fmtShort(x) {
+  if (!isFinite(x)) return '∞';
+  if (x >= 1e15) return x.toExponential(1).replace('e+', 'e');
+  if (x >= 1e12) return (x/1e12).toLocaleString('ru-RU',{maximumFractionDigits:1}) + ' трлн';
+  if (x >= 1e9)  return (x/1e9).toLocaleString('ru-RU',{maximumFractionDigits:1}) + ' млрд';
+  if (x >= 1e6)  return (x/1e6).toLocaleString('ru-RU',{maximumFractionDigits:1}) + ' млн';
+  if (x >= 1e3)  return (x/1e3).toLocaleString('ru-RU',{maximumFractionDigits:0}) + ' тыс';
+  return x.toLocaleString('ru-RU',{maximumFractionDigits:0});
+}
+
+function calc() {
+  const start = +$('start').value || 0;
+  const rate = (+$('rate').value || 0) / 100;
+  const period = $('period').value;
+  const useContrib = $('useContrib').checked;
+  const contrib = useContrib ? (+$('contrib').value || 0) : 0;
+  const view = $('view').value;
+  const years = Math.min(1000, Math.max(1, Math.floor(+$('years').value || 1)));
+
+  $('contrib').disabled = !useContrib;
+  $('periodHead').textContent = view === 'months' ? 'Месяц' : 'Год';
+
+  // периодов начисления в году → месячный множитель
+  const periodsPerYear = period === 'year' ? 1 : period === 'month' ? 12 : (365 * 24) / +period;
+  const apy = Math.pow(1 + rate, periodsPerYear) - 1;
+  const mf = Math.pow(1 + rate, periodsPerYear / 12);
+  const totalMonths = years * 12;
+  const MAX_ROWS = 12000;
+  const step = view === 'months' ? 1 : 12;
+  $('warn').textContent = totalMonths / step > MAX_ROWS
+    ? `Слишком много строк для помесячного вида — показаны первые ${MAX_ROWS} месяцев.` : '';
+
+  let bal = start, invested = start, periodInterest = 0;
+  const rows = [];
+  chartData = [{ m: 0, bal: start, invested: start, monthInterest: 0 }];
+
+  for (let m = 1; m <= totalMonths; m++) {
+    const monthInterest = bal * mf - bal;
+    bal = bal * mf + contrib;
+    invested += contrib;
+    periodInterest += monthInterest;
+    chartData.push({ m, bal, invested, monthInterest });
+    const isRow = view === 'months' ? true : (m % 12 === 0);
+    if (isRow && rows.length < MAX_ROWS) {
+      rows.push({ period: view === 'months' ? m : m / 12, bal, invested, gain: bal - invested, delta: periodInterest });
+      periodInterest = 0;
+    }
+    if (!isFinite(bal)) break;
+  }
+
+  const last = rows[rows.length - 1];
+  $('summary').innerHTML = last
+    ? `APY: <b>${(apy * 100).toLocaleString('ru-RU', { maximumFractionDigits: 2 })}%</b> · ` +
+      `Множитель за год: <b>×${(1 + apy).toFixed(4)}</b> · ` +
+      `Итог: <b>${fmt(last.bal)}</b> · Вложено: <b>${fmt(last.invested)}</b> · ` +
+      `Доход: <b>${fmt(last.gain)}</b>` +
+      (last.invested > 0 ? ` (×${fmt(last.bal / last.invested)} от вложенного)` : '')
+    : '';
+
+  $('rows').innerHTML = rows.map(r =>
+    `<tr><td>${r.period}</td><td>${fmt(r.bal)}</td><td>${fmt(r.invested)}</td>` +
+    `<td class="gain">${fmt(r.gain)}</td><td class="gain">+${fmt(r.delta)}</td></tr>`
+  ).join('');
+
+  drawChart();
+}
+
+// ---------- график ----------
+const W = 920, H = 340, PAD = { l: 74, r: 96, t: 14, b: 34 };
+let pts = [];   // прореженные точки для hover
+
+function drawChart() {
+  const svg = $('chart');
+  const log = $('logScale').checked;
+  const data = chartData.filter(d => isFinite(d.bal));
+  if (data.length < 2) { svg.innerHTML = ''; return; }
+
+  // прореживание до ~600 точек
+  const stride = Math.max(1, Math.ceil(data.length / 600));
+  pts = data.filter((_, i) => i % stride === 0 || i === data.length - 1);
+
+  const xMax = data[data.length - 1].m;
+  const vals = pts.flatMap(d => [d.bal, d.invested]).filter(v => !log || v > 0);
+  let vMin = Math.min(...vals), vMax = Math.max(...vals);
+  if (vMax === vMin) vMax = vMin + 1;
+
+  const X = m => PAD.l + (m / xMax) * (W - PAD.l - PAD.r);
+  let Y;
+  if (log) {
+    const lo = Math.log10(Math.max(vMin, 1e-9)), hi = Math.log10(vMax);
+    Y = v => PAD.t + (1 - (Math.log10(Math.max(v, 1e-9)) - lo) / (hi - lo || 1)) * (H - PAD.t - PAD.b);
+  } else {
+    Y = v => PAD.t + (1 - (v - 0) / (vMax || 1)) * (H - PAD.t - PAD.b);
+  }
+
+  // тики Y
+  let yTicks = [];
+  if (log) {
+    const lo = Math.ceil(Math.log10(Math.max(vMin, 1e-9))), hi = Math.floor(Math.log10(vMax));
+    const every = Math.max(1, Math.ceil((hi - lo) / 5));
+    for (let e = lo; e <= hi; e += every) yTicks.push(Math.pow(10, e));
+    if (!yTicks.length) yTicks = [vMin, vMax];
+  } else {
+    const n = 5, rawStep = vMax / n, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    const nice = [1, 2, 2.5, 5, 10].find(k => k * mag >= rawStep) * mag;
+    for (let v = 0; v <= vMax + 1e-9; v += nice) yTicks.push(v);
+  }
+
+  // тики X (годы)
+  const totalYears = xMax / 12;
+  const xEvery = totalYears <= 12 ? 1 : Math.ceil(totalYears / 10);
+  const xTicks = [];
+  for (let y = 0; y <= totalYears; y += xEvery) xTicks.push(y);
+
+  const line = key => 'M' + pts.map(d => `${X(d.m).toFixed(1)},${Y(d[key]).toFixed(1)}`).join('L');
+
+  let s = '';
+  for (const v of yTicks) {
+    const y = Y(v).toFixed(1);
+    s += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${y}" y2="${y}" stroke="var(--grid)" stroke-width="1"/>`;
+    s += `<text x="${PAD.l - 8}" y="${+y + 4}" text-anchor="end">${fmtShort(v)}</text>`;
+  }
+  for (const yr of xTicks) {
+    const x = X(yr * 12).toFixed(1);
+    s += `<text x="${x}" y="${H - PAD.b + 18}" text-anchor="middle">${yr}</text>`;
+  }
+  s += `<text x="${W - PAD.r}" y="${H - PAD.b + 18}" text-anchor="start" dx="10">лет</text>`;
+  s += `<line x1="${PAD.l}" x2="${W - PAD.r}" y1="${H - PAD.b}" y2="${H - PAD.b}" stroke="var(--axis)" stroke-width="1"/>`;
+
+  s += `<path d="${line('invested')}" fill="none" stroke="var(--series-2)" stroke-width="2"/>`;
+  s += `<path d="${line('bal')}" fill="none" stroke="var(--series-1)" stroke-width="2"/>`;
+
+  // подписи у концов линий
+  const lastP = pts[pts.length - 1];
+  const yB = Y(lastP.bal), yI = Y(lastP.invested);
+  const yI2 = Math.abs(yB - yI) < 14 ? yB + 14 : yI;
+  s += `<text class="endlabel" x="${W - PAD.r + 6}" y="${yB + 4}" fill="var(--series-1)" style="fill:var(--series-1)">${fmtShort(lastP.bal)}</text>`;
+  s += `<text class="endlabel" x="${W - PAD.r + 6}" y="${yI2 + 4}" style="fill:var(--series-2)">${fmtShort(lastP.invested)}</text>`;
+
+  s += `<line id="crosshair" y1="${PAD.t}" y2="${H - PAD.b}" stroke="var(--axis)" stroke-width="1" visibility="hidden"/>`;
+  s += `<circle id="dot1" r="4" fill="var(--series-1)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
+  s += `<circle id="dot2" r="4" fill="var(--series-2)" stroke="var(--panel)" stroke-width="2" visibility="hidden"/>`;
+  s += `<rect id="hover" x="${PAD.l}" y="${PAD.t}" width="${W - PAD.l - PAD.r}" height="${H - PAD.t - PAD.b}" fill="transparent"/>`;
+
+  svg.innerHTML = s;
+  svg._scales = { X, Y, xMax };
+  bindHover();
+}
+
+function bindHover() {
+  const svg = $('chart'), tt = $('tooltip');
+  const hover = $('hover');
+  const move = ev => {
+    const { X, Y, xMax } = svg._scales;
+    const rect = svg.getBoundingClientRect();
+    const sx = (ev.clientX - rect.left) * (W / rect.width);
+    const m = Math.min(xMax, Math.max(0, (sx - PAD.l) / (W - PAD.l - PAD.r) * xMax));
+    let best = pts[0], bd = Infinity;
+    for (const p of pts) { const d = Math.abs(p.m - m); if (d < bd) { bd = d; best = p; } }
+    const x = X(best.m);
+    $('crosshair').setAttribute('x1', x); $('crosshair').setAttribute('x2', x);
+    $('crosshair').setAttribute('visibility', 'visible');
+    $('dot1').setAttribute('cx', x); $('dot1').setAttribute('cy', Y(best.bal)); $('dot1').setAttribute('visibility', 'visible');
+    $('dot2').setAttribute('cx', x); $('dot2').setAttribute('cy', Y(best.invested)); $('dot2').setAttribute('visibility', 'visible');
+
+    const yr = Math.floor(best.m / 12), mo = best.m % 12;
+    tt.innerHTML =
+      `<div class="tt-title">${yr ? yr + ' г.' : ''}${mo ? ' ' + mo + ' мес.' : (yr ? '' : 'старт')}</div>` +
+      `<div class="row"><i class="swatch sw1"></i>Баланс: <b>${fmt(best.bal)}</b></div>` +
+      `<div class="row"><i class="swatch sw2"></i>Вложено: <b>${fmt(best.invested)}</b></div>` +
+      `<div class="row" style="color:var(--green)">Доход: ${fmt(best.bal - best.invested)}</div>`;
+    tt.style.display = 'block';
+    const panel = svg.parentElement.getBoundingClientRect();
+    let left = ev.clientX - panel.left + 16;
+    if (left + tt.offsetWidth > panel.width - 8) left = ev.clientX - panel.left - tt.offsetWidth - 16;
+    tt.style.left = left + 'px';
+    tt.style.top = (ev.clientY - panel.top - 10) + 'px';
+  };
+  const leave = () => {
+    tt.style.display = 'none';
+    for (const id of ['crosshair', 'dot1', 'dot2']) $(id).setAttribute('visibility', 'hidden');
+  };
+  hover.addEventListener('pointermove', move);
+  hover.addEventListener('pointerleave', leave);
+}
+
+inputs.forEach(id => $(id).addEventListener('input', calc));
+calc();
+</script>
+</body>
+</html>
